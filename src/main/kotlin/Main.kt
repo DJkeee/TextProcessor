@@ -1,5 +1,8 @@
 package org.example
 
+import org.example.StatsCalculator.SentencesStatsCalculator
+
+import org.example.StatsCalculator.TextStatsCalculator
 import org.example.text_parsers.TextParser
 import org.example.text_readers.ConsoleReader
 import org.example.text_readers.FileReader
@@ -15,4 +18,7 @@ fun main() {
         println(it.words())
     }
     println(sentences)
+    val calc: SentencesStatsCalculator = SentencesStatsCalculator();
+    val result = calc.calculate(sentences)
+    println(result)
 }

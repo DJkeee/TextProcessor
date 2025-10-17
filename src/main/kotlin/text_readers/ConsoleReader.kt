@@ -2,7 +2,7 @@ package org.example.text_readers
 
 import java.util.Scanner
 
-class ConsoleReader() {
+class ConsoleTextReader() {
     private val scanner = Scanner(System.`in`)
 
     fun read(terminalString: String = ""): String {
