@@ -13,17 +13,16 @@ class SentencesStatsCalculator {
             .groupingBy { it.word }
             .eachCount()
 
-        val wordAppearCount = wordMeetingsRate.values.sum()
-        val uniqueWordsCount = wordMeetingsRate.size
+        val unWordsCount = wordMeetingsRate.size
         val memoryUsed = sentences.sumOf { it.sentence.length * CHAR_SIZE_IN_BYTES }
 
         return TextStats(
             wordCount = wordCount,
             charCount = charCount,
-            wordAppearCount = wordAppearCount,
             wordMeetingRate = wordMeetingsRate,
             memoryUsed = memoryUsed,
-            uniqueWordsCount = uniqueWordsCount
+            uniqueWordCount = unWordsCount
         )
     }
+
 }
