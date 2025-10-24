@@ -1,5 +1,31 @@
 package org.example.data_classes
 
+/**
+ * Класс для хранения и отображения статистики текста.
+ *
+ * Содержит основную статистику текста: количество слов, символов, частоту встречаемости слов,
+ * использование памяти и количество уникальных слов. Предоставляет методы для форматированного
+ * вывода статистики в виде текстовых таблиц.
+ *
+ * @property wordCount общее количество слов в тексте
+ * @property charCount общее количество символов в тексте
+ * @property wordMeetingRate карта частоты встречаемости слов (слово -> количество вхождений)
+ * @property memoryUsed объем использованной памяти в байтах
+ * @property uniqueWordCount количество уникальных слов в тексте
+ *
+ * @example
+ * ```
+ * val stats = TextStats(
+ *     wordCount = 150,
+ *     charCount = 1250,
+ *     wordMeetingRate = mapOf("привет" to 5, "мир" to 3),
+ *     memoryUsed = 2048,
+ *     uniqueWordCount = 100
+ * )
+ * println(stats) // выводит краткую статистику
+ * println(stats.getFullStatistics()) // выводит полную статистику
+ * ```
+ */
 data class TextStats(
     val wordCount: Int,
     val charCount: Int,
@@ -7,6 +33,22 @@ data class TextStats(
     val memoryUsed: Int,
     val uniqueWordCount: Int
 ) {
+    companion object {
+        /** Минимальная ширина колонки для отображения слов в таблице */
+        private const val MIN_WORD_COLUMN_WIDTH = 12
+
+        /** Ширина колонки для отображения частоты слов в таблице */
+        private const val COUNT_WIDTH = 10
+    }
+
+    /**
+     * Возвращает строковое представление статистики в кратком формате.
+     *
+     * Включает основную статистику и таблицу топ-10 самых частых слов.
+     * Форматирует данные в виде читабельного отчета с разделителями и иконками.
+     *
+     * @return форматированная строка с краткой статистикой текста
+     */
     override fun toString(): String {
         val separator = "=".repeat(50)
         val topWords = getTopWords(10)
@@ -29,6 +71,15 @@ data class TextStats(
         """.trimMargin()
     }
 
+    /**
+     * Форматирует карту слов в виде текстовой таблицы.
+     *
+     * Создает таблицу в псевдографическом стиле с колонками "СЛОВО" и "ЧАСТОТА".
+     * Автоматически подбирает ширину колонок на основе данных.
+     *
+     * @param wordMap карта слов для отображения (слово -> частота)
+     * @return форматированная строка с таблицей слов
+     */
     private fun formatWordMap(wordMap: Map<String, Int>): String {
         if (wordMap.isEmpty()) {
             return "   Нет данных о словах"
@@ -51,6 +102,14 @@ data class TextStats(
         return "$header\n$rows\n$footer"
     }
 
+    /**
+     * Возвращает топ-N самых частых слов.
+     *
+     * Сортирует слова по убыванию частоты и возвращает указанное количество самых частых слов.
+     *
+     * @param limit максимальное количество возвращаемых слов
+     * @return карта с наиболее часто встречающимися словами (слово -> частота)
+     */
     private fun getTopWords(limit: Int): Map<String, Int> {
         return wordMeetingRate.entries
             .sortedByDescending { it.value }
@@ -58,6 +117,14 @@ data class TextStats(
             .associate { it.key to it.value }
     }
 
+    /**
+     * Возвращает полную статистику текста в расширенном формате.
+     *
+     * Включает расширенную статистику (включая среднюю длину слова) и полную таблицу
+     * всех слов с их частотой и процентным соотношением.
+     *
+     * @return форматированная строка с полной статистикой текста
+     */
     fun getFullStatistics(): String {
         val separator = "=".repeat(60)
 
@@ -80,6 +147,14 @@ data class TextStats(
         """.trimMargin()
     }
 
+    /**
+     * Форматирует полную карту слов с процентным соотношением.
+     *
+     * Создает подробную таблицу со всеми словами, их абсолютной частотой и
+     * процентным соотношением от общего количества слов. Слова сортируются по убыванию частоты.
+     *
+     * @return форматированная строка с полной таблицей слов
+     */
     private fun formatFullWordMap(): String {
         if (wordMeetingRate.isEmpty()) {
             return "   Нет данных о словах"
@@ -87,19 +162,18 @@ data class TextStats(
 
         val sortedWords = wordMeetingRate.entries.sortedByDescending { it.value }
         val maxWordLength = sortedWords.maxOfOrNull { it.key.length } ?: 0
-        val wordWidth = maxOf(maxWordLength, 12) + 2
-        val countWidth = 10
+        val wordWidth = maxOf(maxWordLength, MIN_WORD_COLUMN_WIDTH) + 2
 
-        val header = "   ┌${"─".repeat(wordWidth)}┬${"─".repeat(countWidth)}┐\n" +
-                "   │ ${"СЛОВО".padEnd(wordWidth - 1)}│ ${"ВСТРЕЧАЕМОСТЬ".padEnd(countWidth - 1)}│\n" +
-                "   ├${"─".repeat(wordWidth)}┼${"─".repeat(countWidth)}┤"
+        val header = "   ┌${"─".repeat(wordWidth)}┬${"─".repeat(COUNT_WIDTH)}┐\n" +
+                "   │ ${"СЛОВО".padEnd(wordWidth - 1)}│ ${"ВСТРЕЧАЕМОСТЬ".padEnd(COUNT_WIDTH - 1)}│\n" +
+                "   ├${"─".repeat(wordWidth)}┼${"─".repeat(COUNT_WIDTH)}┤"
 
         val rows = sortedWords.joinToString("\n") { (word, count) ->
             val percentage = "%.1f%%".format(count.toDouble() / wordCount * 100)
-            "   │ ${word.padEnd(wordWidth - 1)}│ ${"$count ($percentage)".padEnd(countWidth - 1)}│"
+            "   │ ${word.padEnd(wordWidth - 1)}│ ${"$count ($percentage)".padEnd(COUNT_WIDTH - 1)}│"
         }
 
-        val footer = "   └${"─".repeat(wordWidth)}┴${"─".repeat(countWidth)}┘"
+        val footer = "   └${"─".repeat(wordWidth)}┴${"─".repeat(COUNT_WIDTH)}┘"
 
         return "$header\n$rows\n$footer"
     }
