@@ -4,22 +4,41 @@ import org.example.data_classes.Sentence
 import org.slf4j.LoggerFactory
 import java.io.File
 
+/**
+ * Реализация интерфейса TextSaver для сохранения текста и статистики в файл.
+ *
+ * Сохраняет предложения в файл с дополнительной статистической информацией, включая:
+ * - Текст, собранный из нормализованных слов
+ * - Общую статистику текста (количество предложений, слов, символов)
+ * - Топ-10 самых частых слов
+ * - Средние показатели текста
+ *
+ * @see TextSaver базовый интерфейс для сохранения текста
+ * @see Sentence класс, представляющий предложение
+ */
 class OriginalTextSaver : TextSaver {
     private val logger = LoggerFactory.getLogger(OriginalTextSaver::class.java)
 
+    /**
+     * Сохраняет список предложений в указанный файл с добавлением статистики.
+     *
+     * @param sentences список предложений для сохранения
+     * @param path путь к файлу для сохранения
+     *
+     * @example
+     * ```
+     * val saver = OriginalTextSaver()
+     * val sentences = parser.parse("Текст для анализа.")
+     * saver.save(sentences, "результат.txt")
+     * ```
+     */
     override fun save(sentences: List<Sentence>, path: String) {
         try {
             val textContent = buildString {
-                appendLine("=== ИСХОДНЫЙ ТЕКСТ ===")
+                appendLine("=== ТЕКСТ ===")
                 appendLine()
                 sentences.forEach { sentence ->
-                    // Если у Sentence есть свойство для исходного текста, используем его
-                    // Иначе собираем из слов
-                    val sentenceText = if (hasOriginalTextProperty(sentence)) {
-                        getOriginalText(sentence)
-                    } else {
-                        sentence.words().joinToString(" ") { it.word }
-                    }
+                    val sentenceText = sentence.words().joinToString(" ") { it.word }
                     appendLine(sentenceText)
                 }
 
@@ -27,8 +46,8 @@ class OriginalTextSaver : TextSaver {
                 appendLine("=== СТАТИСТИКА ТЕКСТА ===")
                 appendLine()
 
-                // Добавляем статистику
                 appendStatistics(sentences)
+                println("Успех! Файл сохранен по пути ${path}")
             }
 
             File(path).writeText(textContent)
@@ -37,6 +56,11 @@ class OriginalTextSaver : TextSaver {
         }
     }
 
+    /**
+     * Добавляет статистическую информацию в StringBuilder.
+     *
+     * @param sentences список предложений для анализа
+     */
     private fun StringBuilder.appendStatistics(sentences: List<Sentence>) {
         val allWords = sentences.flatMap { it.words() }
         val wordMeetings = allWords.groupingBy { it.word }.eachCount()
@@ -61,33 +85,5 @@ class OriginalTextSaver : TextSaver {
         appendLine("СРЕДНИЕ ПОКАЗАТЕЛИ:")
         appendLine("- Средняя длина предложения: ${"%.1f".format(allWords.size.toDouble() / sentences.size)} слов")
         appendLine("- Средняя длина слова: ${"%.1f".format(totalChars.toDouble() / allWords.size)} символов")
-    }
-
-    // Вспомогательные методы для работы с исходным текстом
-    private fun hasOriginalTextProperty(sentence: Sentence): Boolean {
-        return try {
-            sentence::class.java.getMethod("getOriginalText") != null ||
-                    sentence::class.java.declaredFields.any { it.name == "originalText" }
-        } catch (e: Exception) {
-            false
-        }
-    }
-
-    private fun getOriginalText(sentence: Sentence): String {
-        return try {
-            // Пытаемся получить исходный текст через геттер
-            val method = sentence::class.java.getMethod("getOriginalText")
-            method.invoke(sentence) as String
-        } catch (e: Exception) {
-            try {
-                // Пытаемся получить через поле
-                val field = sentence::class.java.getDeclaredField("originalText")
-                field.isAccessible = true
-                field.get(sentence) as String
-            } catch (e: Exception) {
-                // Если не получается - собираем из слов
-                sentence.words().joinToString(" ") { it.word }
-            }
-        }
     }
 }
